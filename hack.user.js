@@ -15,9 +15,7 @@ function scriptTag(src, callback) {
 
         if (!callback.done && (!state || /loaded|complete/.test(state))) {
             callback.done = true;
-            var script = document.createElement("script");
-            script.textContent = "(" + callback.toString() + ")();";
-            ( document.body || head ).appendChild( script );
+            callback();
         }
     };
 
@@ -25,10 +23,12 @@ function scriptTag(src, callback) {
     (document.body || head).appendChild(s); 
 }
 
+
 scriptTag('https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js', function(){
     scriptTag( 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js', function(){
-        scriptTag('http://sandbox.localhost/glue-hack.js', function(){
-            console.log('hack loaded');
-        });    
+	    var s = document.createElement('script');
+	    s.innerHTML = "$('body').children().draggable().children().draggable(); $('td').draggable(); $('img').draggable();";
+        (document.body || head).appendChild(s); 	    
     });
 })
+
