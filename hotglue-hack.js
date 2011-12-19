@@ -1,54 +1,51 @@
-/**
-
-
-*/
-
-
 $('img').each(function( i, el ){
     $(el).attr('src', el.src );
 });
 
-var selectors = '#block-block-119 .content,p,h1,h2,h3,h4,h5,.teamblock';
-//var selectors = '#block-block-146';
+//var selectors = 'a,#block-block-119 .content,p,h1,h2,h3,h4,h5,.teamblock';
+var selectors = 'a:visible,p,h1,h2,h3,h4,h5';
 
-//var containment = $( ".selector" ).draggable( "option", "containment" );
-
-/*
-$(selectors).draggable({ containment: 'window' }).each(function(i,el){
-    $(el).css('position', 'absolute');
-});
-*/
 $(selectors).each( function(i, el){
     var offset = $(el).offset();
     var position = $(el).position();
 
-    console.log(offset, 'offset');
-    console.log(position, 'position');
+    var css = {
+        'z-index': 100,
+        width: $(el).width() + 'px',
+        height: $(el).height() + 'px',
+        top: offset.top + 'px',
+        left: offset.left + 'px',
+        'background-color': $(el).css('background-color'),
+        'color': $(el).css('color'),
+        'line-height': $(el).css('line-height'),
+        'font-family': $(el).css('font-family'),
+        'font-size': $(el).css('font-size'),
+        'font-style':$(el).css('font-style'),
+        'font-weight':$(el).css('font-weight')
+    }
+
 
     create_glue({
-        css: {
-            'z-index': 100,
-            width: $(el).width() + 'px',
-            height: $(el).height() + 'px',
-            top: offset.top + 'px',
-            left: offset.left + 'px',
-            'background-color': $(el).css('background-color'),
-            'color': $(el).css('color'),
-            'line-height': $(el).css('line-height'),
-            'font-family': $(el).css('font-family'),
-            'font-size': $(el).css('font-size'),
-            'font-style':$(el).css('font-style'),
-            'font-weight':$(el).css('font-weight')
-        },
+        css: css,
         content: el.innerHTML
     });
 
+    //absolutize( el, css );
+
+    //$(document.body).append( el.parentNode.removeChild(el) );
+
 });
+
+function absolutize( el, css ){
+    $(el).css({
+        position: 'absolute',
+        top: css.top + 'px',
+        left: css.top + 'px'
+    });
+}
 
 
 function create_glue( el_data ){
-//    console.log( element_css );
-
     $.getJSON("http://hotglue2.localhost/jsonp.php?action=create&callback=?",
         function(data) {
             var id = parseInt(data['#data'].name.split('.').pop());
@@ -63,8 +60,3 @@ function create_glue( el_data ){
         });
     });
 }
-
-
-//$.getJSON('http://hotglue2.localhost/jsonp.php', function(data) {});
-
-//print_glue(nodes);
