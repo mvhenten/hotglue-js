@@ -4,92 +4,67 @@
 */
 
 
-var childs = $(document.body).children().toArray();
+$('img').each(function( i, el ){
+    $(el).attr('src', el.src );
+});
 
-stack = [];
-nodes = [];
+var selectors = '#block-block-119 .content,p,h1,h2,h3,h4,h5,.teamblock';
+//var selectors = '#block-block-146';
 
-// create the stack, in such a format we can record
-// the 'depth'
-for( var i = 0, len = childs.length; i < len; i++ ){
-    stack.push( { depth: 0, element: childs[i] } );
-}
+//var containment = $( ".selector" ).draggable( "option", "containment" );
 
-$('div').draggable();
+/*
+$(selectors).draggable({ containment: 'window' }).each(function(i,el){
+    $(el).css('position', 'absolute');
+});
+*/
+$(selectors).each( function(i, el){
+    var offset = $(el).offset();
+    var position = $(el).position();
 
-while( stack.length ){
-    var el = stack.pop();
-    var childs = $(el.element).children().toArray();
+    console.log(offset, 'offset');
+    console.log(position, 'position');
 
-    if( childs.length == 0 ) continue;
-    if( el.element.tagName !== 'DIV' ) continue;
-    if( el.depth > 6 ) continue;
+    create_glue({
+        css: {
+            'z-index': 100,
+            width: $(el).width() + 'px',
+            height: $(el).height() + 'px',
+            top: offset.top + 'px',
+            left: offset.left + 'px',
+            'background-color': $(el).css('background-color'),
+            'color': $(el).css('color'),
+            'line-height': $(el).css('line-height'),
+            'font-family': $(el).css('font-family'),
+            'font-size': $(el).css('font-size'),
+            'font-style':$(el).css('font-style'),
+            'font-weight':$(el).css('font-weight')
+        },
+        content: el.innerHTML
+    });
 
-    // add children, record depth
-    for( var i = 0, len = childs.length; i < len; i++ ){
-        stack.push({ depth: el.depth + 1 , element: childs[i] });
-    }
+});
 
-    // process the element: retrieve offset, widht, height
-    el.properties = {
-        offset: $(el.element).offset(),
-        zIndex: el.depth,
-        width: $(el.element).width(),
-        height: $(el.element).height()
-    };
-    
-    nodes.push(el);
-}
 
-function absolutize_nodes( nodes ){
-    for( var i = 0, len = nodes.length; i < len; i++ ){
-        var node = nodes[i], el = node.element;
-        
-        $(el).css({
-            position: 'absolute',
-            top: node.properties.offset.top + 'px',
-            left: node.properties.offset.left + 'px',
-            width: node.properties.width + 'px',
-            height: node.properties.height + 'px',
-            zIndex: node.depth
+function create_glue( el_data ){
+//    console.log( element_css );
+
+    $.getJSON("http://hotglue2.localhost/jsonp.php?action=create&callback=?",
+        function(data) {
+            var id = parseInt(data['#data'].name.split('.').pop());
+            $.getJSON("http://hotglue2.localhost/jsonp.php?&callback=?",{
+                action: 'save',
+                id: id,
+                css: JSON.stringify( el_data.css ),
+                content: el_data.content
+            },
+            function(data){
+                console.log(data);
         });
-        
-//        console.log(el);
- //      break;
-    }
+    });
 }
 
 
-function make_draggable_nodes( nodes ){
-    for( var i = 0, len = nodes.length; i < len; i++ ){
-        $(nodes[i].element ).draggable();
-    
-    }
-}
-//absolutize_nodes( nodes );
+//$.getJSON('http://hotglue2.localhost/jsonp.php', function(data) {});
 
-//make_draggable_nodes(nodes);
-//$('p').draggable();
-
-
-function print_glue( nodes ){
-    var n = $('<pre></pre>');
-    for( var i = 0, len = nodes.length; i < len; i++ ){
-        var prop = nodes[i].properties
-
-        n.append(
-            [ 'object-zindex: ' + prop.zIndex ,
-              'object-width: ' + prop.width,
-              'object-height: ' + prop.height,
-              'object-left: ' + prop.offset.left,
-              'object-top: ' + prop.offset.top,
-              "\n\n",
-            ].join("\n")
-        );
-    }
-    $(document.body).append(n);
-}
-
-print_glue(nodes);
-    
-
+//print_glue(nodes);
