@@ -20,54 +20,101 @@
  */
 (function($) {
     function getInlineTextCSS( el ){
-        var props = (
-            'font-size font-family font-weight color letter-spacing word-spacing '
-            +'text-align padding-left padding-right padding-top padding-bottom'
+        var spec = (
+            'font-size font-family font-weight color '
+            + 'letter-spacing word-spacing text-align'
         ).split(/\s/);
 
+        return getInlineCSSProperties( el, spec );
+    }
+
+    function getInlineBoxCSS( el ){
+        var corners     = '%s-top %s-right %s-bottom %s-left';
+        var properties  = ['padding','margin'];
         var collect = [];
 
-        for( var i = 0, len = props.length; i < len; i++ ){
-            var prop_name = props[i];
-            var value = $(el).css(prop_name);
+        for( var i = 0, len = properties.length; i < len; i++ ){
+            var property = properties[i];
+            var spec    = corners.replace(/%s/g, property ).split(/\s/);
 
-            if( value ){
-                collect.push( prop_name + ':' + value );
-            }
+            collect.push(getInlineCSSProperties( el, spec ));
         }
 
-        return collect.join(';');
+        var spec = ['width','height','top','right', 'bottom',
+                    'left','float','display','position'];
+
+        collect.push(getInlineCSSProperties( el, spec ));
+
+        return filterNonEmpty(collect).join(';');
     }
 
     function getInlineBordersCSS( el ){
-        var dirs    = 'top right bottom left'.split(' ');
+        var dirs    = 'top right bottom left'.split(/\s/);
         var collect = [];
         for( var i = 0, len = dirs.length; i < len; i++ ){
             collect.push(getInlineBorderCSS(el, dirs[i]));
         }
 
-        return collect.join(';');
+        return filterNonEmpty(collect).join(';');
     }
 
     function getInlineBorderCSS( el, dir ){
         var borders = 'border-%s-width border-%s-style border-%s-color';
-        var spec     = borders.replace(/%s/g, dir ).split(' ');
+        var spec     = borders.replace(/%s/g, dir ).split(/\s/);
         var collect  = [];
 
         for( var j = 0, len = spec.length; j < len; j++ ){
             var value = $(el).css(spec[j]);
+            if( value == '0px' ){
+                return '';// no border, no cry
+            }
             collect.push(value);
         }
 
         return 'border-' + dir + ':' + collect.join(' ');
     }
 
+    function getInlineCSSProperties( el, spec ){
+        var collect = [];
+
+        for( var i = 0, len = spec.length; i < len; i++ ){
+            var prop_name = props[i];
+            var value = $(el).css(prop_name);
+
+            if( value == '0px' ){
+                return '';
+            }
+
+            collect.push( prop_name + ':' + value );
+        }
+
+        return filterNonEmpty(collect).join(';');
+    }
+
+    function filterNonEmpty(arr){
+        return arr.filter(function(n){
+            if(n == '' || n == undefined ){
+                return false;
+            }
+            return true;
+        });
+    }
+
+    function getInlineCSS( el ){
+        var css = filterNonEmpty([
+            getInlineTextCSS(el),
+            getInlineBordersCSS(el),
+            getInlineBoxCSS(el)
+        ]).join(';');
+
+        css = (css !== '') ? css + ';' : '';
+
+        return css;
+    }
+
 	$.fn.inlineCSS = function() {
 		this.each(function() {
-            $(this).attr('style', [
-                getInlineTextCSS(this),
-                getInlineBordersCSS(this)
-            ].join(';') + ';');
+            $(this).attr('style', getInlineCSS(this) );
 		});
 		return this;
 	};
