@@ -18,6 +18,8 @@ var glue_me = (function(){
             });
         },
         glue: function( el ){
+            var offset = $(el).offset();
+
             var css = {
                 'z-index': 100,
                 width: $(el).width() + 'px',
