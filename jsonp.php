@@ -17,6 +17,20 @@ function jsonp_out( $data, $p='callback' ){
     exit();
 }
 
+function cleanup(){
+    $path = dirname(__FILE__) . '/content/start/head/';
+
+    $files = scandir( $path );
+
+    foreach( $files as $file ){
+        if( in_array( $file, array('page','.','..' ))) continue;
+        unlink( $path . $file );
+    }
+
+
+}
+
+
 
 //$json   = json_decode( $_GET['d'] );
 $callback   = isset($_GET['callback']) ? $_GET['callback'] : 'callback';
@@ -55,5 +69,6 @@ switch( $action ){
         break;
 
     default:
+        cleanup();
         die('Not a valid jsonp request');
 }

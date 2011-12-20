@@ -30,9 +30,9 @@ $(selectors).each( function(i, el){
         content: el.innerHTML
     });
 
-    //absolutize( el, css );
 
-    //$(document.body).append( el.parentNode.removeChild(el) );
+//    absolutize( el, css );
+//    $(document.body).append( el.parentNode.removeChild(el) );
 
 });
 
