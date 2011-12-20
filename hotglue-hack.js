@@ -46,10 +46,10 @@ function absolutize( el, css ){
 
 
 function create_glue( el_data ){
-    $.getJSON("http://hotglue2.localhost/jsonp.php?action=create&callback=?",
+    $.getJSON("http://tm12.hotglue.org/hotglue2/jsonp.php?action=create&callback=?",
         function(data) {
             var id = parseInt(data['#data'].name.split('.').pop());
-            $.getJSON("http://hotglue2.localhost/jsonp.php?&callback=?",{
+            $.getJSON("http://tm12.hotglue.org/hotglue2/jsonp.php?&callback=?",{
                 action: 'save',
                 id: id,
                 css: JSON.stringify( el_data.css ),
