@@ -56,7 +56,7 @@ switch( $action ){
 
         $css = join(';', $css_array );
         $id   = $_GET['id'];
-        $html = sprintf('<div class="text resizable object glue-text-editing" style="%s" id="start.head.%d"></div>', $css, $id );
+        $html = sprintf('<div class="text resizable object glue-text-editing" style="%s" id="start.head.%s"></div>', $css, $id );
         $out = save_state( array( 'html' => $html ) );
 
         if( $_GET['content'] ){

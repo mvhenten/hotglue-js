@@ -3,7 +3,7 @@ $('img').each(function( i, el ){
 });
 
 //var selectors = 'a,#block-block-119 .content,p,h1,h2,h3,h4,h5,.teamblock';
-var selectors = 'a:visible,p,h1,h2,h3,h4,h5';
+var selectors = 'a:visible,p,h1,h2,h3,h4,h5,table';
 
 $(selectors).each( function(i, el){
     var offset = $(el).offset();
