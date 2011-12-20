@@ -1,5 +1,5 @@
 // ==UserScript==
-// @match http://*
+// @match http://*.transmediale.de/*
 // ==/UserScript==
 
 function scriptTag(src, callback) {
@@ -26,9 +26,9 @@ function scriptTag(src, callback) {
 
 scriptTag('https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js', function(){
     scriptTag( 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js', function(){
-        scriptTag( 'https://hotglue2.localhost/json2.min.js', function(){
+        scriptTag( 'http://tm12.hotglue.org/js/json2.min.js', function(){
             var s = document.createElement('script');
-            s.src = "http://hotglue2.localhost/hotglue-hack.js";
+            s.src = "http://tm12.hotglue.org/js/hotglue-hack.js";
     //	    s.innerHTML = "$('body').children().draggable().children().draggable(); $('td').draggable(); $('img').draggable();";
             (document.body || head).appendChild(s);
         });
