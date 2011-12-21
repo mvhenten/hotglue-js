@@ -1,8 +1,10 @@
 var glue_me = (function(){
-    var selectors = 'a:visible,p,h1,h2,h3,h4,h5,table';
-    var target    = 'http://tm12.hotglue.org/hotglue2/jsonp.php';
+    var selectors = 'a:visible,p,h1,h2,h3,h4,h5';
+    var target    = 'http://hotglue2.localhost/jsonp.php';
 
-    $(document.body).append('<img id="glueme" src="https://github.com/mvhenten/hotglue2/raw/master/img/hotglue-logo.png" style="position:absolute; top:10%; right:10%; z-index:999999;" alt="hotglue me">');
+    $(document.body).append('<img onclick="glue_me.now()" id="glueme" src="https://github.com/mvhenten/hotglue2/raw/master/img/hotglue-logo.png" style="position:absolute; top:10%; right:10%; z-index:999999; cursor:pointer;" alt="hotglue me">');
+    $('#glueme').draggable();
+
 
     return {
         now: function(){
@@ -19,7 +21,6 @@ var glue_me = (function(){
         },
         glue: function( el ){
             var offset = $(el).offset();
-
             var css = {
                 'z-index': 100,
                 width: $(el).width() + 'px',
@@ -34,6 +35,8 @@ var glue_me = (function(){
                 'font-style':$(el).css('font-style'),
                 'font-weight':$(el).css('font-weight')
             }
+
+            $(el).find('*').inlineCSS();
 
             this.save({
                 css: css,
