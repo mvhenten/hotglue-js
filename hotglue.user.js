@@ -32,9 +32,6 @@ scriptTag('https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js', fu
                 scriptTag( 'http://' + domain + '/glue.js', function(){
                     console.log('hello world');
                 });
-                //var s = document.createElement('script');
-                //s.src = 'http://' + domain + '/glue.js';
-                //(document.body || head).appendChild(s);
             });
         });
     });
