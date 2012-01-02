@@ -29,10 +29,12 @@ scriptTag('https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js', fu
     scriptTag( 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js', function(){
         scriptTag( 'http://' + domain + '/inline.plugin.js', function(){
             scriptTag( 'http://' + domain + '/json2.min.js', function(){
-                var s = document.createElement('script');
-                s.src = 'http://' + domain + '/glue.js';
-        //	    s.innerHTML = "$('body').children().draggable().children().draggable(); $('td').draggable(); $('img').draggable();";
-                (document.body || head).appendChild(s);
+                scriptTag( 'http://' + domain + '/glue.js', function(){
+                    console.log('hello world');
+                });
+                //var s = document.createElement('script');
+                //s.src = 'http://' + domain + '/glue.js';
+                //(document.body || head).appendChild(s);
             });
         });
     });
