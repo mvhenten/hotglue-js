@@ -1,92 +1,67 @@
 var glue_me = (function(){
-    var selectors = 'a:visible,p,h1,h2,h3,h4,h5';
-    console.log($(selectors).collectCSS());
+    var selectors = 'a:visible,img,p,h1,h2,h3,h4,h5';
+    var target    = 'http://hotglue2.localhost/jsonp.php';
 
     $(document.body).append(
-        $('<img onclick="glue_me.now()" id="glueme" '
+        $('<img onclick="glue_me.go()" id="glueme" '
           +'src="https://github.com/mvhenten/hotglue2/raw/master/img/hotglue-logo.png" '
           + 'style="position:absolute; top:10%; right:10%; z-index:999999; cursor:pointer; " '
           +'alt="hotglue me">').hide()
     );
 
-
     $('#glueme').draggable().fadeIn(1000);
 
     return {
+        go: function(){
+            var page = {
+                title: $('title').text(),
+                elements: this.collect(),
+                style: $('body').collectCSS().style
+            }
+
+            $.post(target, {data: JSON.stringify(page)}, function(data){
+                console.log(data);
+            });
+        },
+
         collect: function(){
             this.sanitizeImages();
 
-            var collection = $( $(selectors).collectCSS() ).map(function(i, obj ){
-                var offset = $(el).offset();
+            var collect = $( $(selectors).collectCSS() ).map(function(i, obj ){
+                var offset = $(obj.element).offset();
 
                 obj.style.top  = offset.top + 'px';
                 obj.style.left = offset.left + 'px';
+                obj.properties = {};
 
                 $(obj.element).find('*').inlineCSS();
+                obj.text = $(obj.element).html();
 
-                obj.tagName = obj.element.tagName.toLowerCase();
-
-                switch( obj.tagName ){
+                switch( obj.element.tagName.toLowerCase() ){
                     case 'img':
-                        obj.src  = obj.element.src;
+                        obj.properties.src  = obj.element.src;
+                        obj.type = 'image';
                         break;
                     case 'a':
-                        obj.href = obj.element.href;
+                        obj.properties.href = obj.element.href;
+                        obj.type = 'link';
                         break;
+                    default:
+                        obj.type = 'text';
                 }
 
+                delete(obj.element);
                 return obj;
             });
 
-            //this.save( collection );
+            return $.makeArray(collect);
         },
 
         sanitizeImages: function(){
+            /* need to set src attribute explicitly */
             $('img').each(function( i, el ){
                 $(el).attr('src', el.src );
             });
         }
     }
-
-
-
-    //var target    = 'http://hotglue2.localhost/jsonp.php';
-    //
-
-    //
-    //
-    //return {
-    //    now: function(){
-    //        var self = this;
-    //
-    //        $(selectors).each( function(i, el){
-    //            var offset = $(el).offset();
-    //            var position = $(el).position();
-    //            self.glue(el);
-    //        });
-    //    },
-    //    save: function( el_data ){
-    //        $.getJSON( target + "?action=create&callback=?",
-    //            function(data) {
-    //                var id = parseInt(data['#data'].name.split('.').pop());
-    //                $.getJSON( target + "?&callback=?",{
-    //                    action: 'save',
-    //                    id: id,
-    //                    css: JSON.stringify( el_data.css ),
-    //                    content: el_data.content
-    //                },
-    //                function(data){
-    //                    //console.log(data);
-    //            });
-    //        });
-    //    },
-    //    absolutize: function(el){
-    //        //    $(document.body).append( el.parentNode.removeChild(el) );
-    //        $(el).css({
-    //            position: 'absolute',
-    //            top: css.top + 'px',
-    //            left: css.top + 'px'
-    //        });
-    //    }
-    //};
 })();
