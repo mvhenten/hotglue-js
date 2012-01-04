@@ -1,11 +1,14 @@
 <?php
+namespace glue;
+
 ini_set('display_errors', "true");
 ini_set('display_warnings', "true");
 ini_set('upload_max_filesize', '16M');
 ini_set('post_max_size', '16M');
+
 define( 'HOTGLUE_BASE_DIR', dirname(__FILE__) );
 
-function process_cors_headers(){
+function headers(){
     header('Access-Control-Allow-Origin: http://www.transmediale.de');
     header('Access-Control-Allow-Methods: POST, OPTIONS');
     header('Access-Control-Allow-Headers: X-Requested-With');
@@ -28,16 +31,65 @@ function process_cors_headers(){
     }
 }
 
-process_cors_headers();
+headers();
 
 require('module_glue.inc.php');
+
+function url_whitelist(){
+    return array(
+        'http://www.transmediale.de',
+        'http://sandbox.localhost',
+        'https://github.com/mvhenten',
+        'http://www.facebook.com/transmediale',
+        'http://twitter.com/transmediale',
+        'http://www.flickr.com/photos/transmediale',
+        'http://www.netvibes.com/transmediale',
+        'http://vimeo.com/transmediale'
+    );
+}
+
+function url_path( $url ){
+    $url = parse_url( $url );
+
+
+
+}
+
+function is_url_whitelisted( $url ){
+    static $whitelist;
+
+    if( ! $whitelist ){
+        $whitelist = map( function( $i, $u ){
+                return sprintf('/^%s/', preg_quote($u, '/'));
+            },
+            url_whitelist()
+        );
+    }
+
+    foreach( $whitelist as $re ){
+        if( preg_match( $re, $url ) ){
+            return true;
+        }
+    }
+
+    return false;
+}
 
 function map( $function, $array ){
     return array_map( $function, array_keys($array), array_values($array) );
 }
 
-function zip_keys( $key, $value ){
-    return "$key: $value";
+function slice( array $array, $keys ){
+    $args  = func_get_args();
+    $input = array_shift($args);
+
+    if( is_array( $args[0] ) ){
+        $args = $args[0];
+    }
+
+    $args = array_flip($args);
+
+    return array_intersect_key( $input, $args );
 }
 
 function jsonp_out( $data, $p='callback' ){
@@ -50,57 +102,64 @@ function jsonp_out( $data, $p='callback' ){
     exit();
 }
 
-function cleanup(){
-    $path = HOTGLUE_BASE_DIR . '/content/start/head/';
-
-    $files = scandir( $path );
-
-    foreach( $files as $file ){
-        if( in_array( $file, array('page','.','..' ))) continue;
-        unlink( $path . $file );
-    }
+function current_page(){
+    return 'start.head';
 }
 
-function validate_json(){
+function create_object( $element ){
+    $glue = \create_object( array('page' => current_page() ) );
+    $id   = $glue['#data']['name'];
+    $css  = join( ';', map( function($k,$v){ return "$k: $v"; }, (array) $element->style ));
+
+    $html = sprintf('<div class="text resizable object \
+                    glue-text-editing" style="%s" id="%s"></div>', $css, $id );
+
+    $glue  = save_state( array( 'html' => $html ) );
+
+    return $id;
+}
+
+function validate_keys( array $keys, $check ){
+    map( function( $i, $key ) use ( $check ){
+        $check = is_object( $check ) ? isset( $check-> $key ) : isset( $check[$key] );
+        $check ?: die( 'invalid structure: ' . $key  );
+    }, $keys );
+}
+
+$json = ( $validate = function(){
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-        $json = json_decode($_POST['data']);
+        if( $json = json_decode($_POST['data']) ){
+            validate_keys( array('title','elements','style'), $json );
 
-        if( ! $json ){
-            exit();
+            map( function( $i, $e ){
+                validate_keys( array('type','text','style','properties'), $e );
+
+                $type = $e->type;
+                $link = ( $type == 'image' ) ? $e->properties->src : null;
+                $link = ( $type == 'link' ) ? $e->properties->href : null;
+
+                if( $link && ! is_url_whitelisted($link) ){
+                    die('invalid resource: ' . $link );
+                }
+            }, $json->elements );
+
+            return $json;
         }
-        return $json;
+        die('invalid json data');
     }
-    else{
-        cleanup();
-        die('Cleanup');
+    else{ // stub code for now...
+        $path  = HOTGLUE_BASE_DIR . '/content/start/head/';
+        $files = scandir( $path );
+
+        map( function($i, $file){
+            if( in_array( $file, array('page','.','..' ))) continue;
+            unlink( $path . $file );
+        }, $file );
     }
-}
+}) ? $validate() : null;
 
 
-$callback   = isset($_GET['callback']) ? $_GET['callback'] : 'callback';
-$action     = isset($_GET['action']) ? $_GET['action'] : null;
-
-
-$main = function(){
-    $json = validate_json();
-
-    function get_current_page(){
-        return 'start.head';
-    }
-
-    function create_glue_object( $element ){
-        $glue = create_object( array('page' => 'start.head') );
-        $id   = $glue['#data']['name'];
-        $css  = join( ';', map( 'zip_keys', (array) $element->style ));
-
-        $html = sprintf('<div class="text resizable object \
-                        glue-text-editing" style="%s" id="%s"></div>', $css, $id );
-
-        $glue  = save_state( array( 'html' => $html ) );
-
-        return $id;
-    }
-
+( $main = function( $json ){
     $handlers = array(
         'image' => function( $element ){
             $tmp_name = tempnam('/tmp', 'glue_');
@@ -112,13 +171,13 @@ $main = function(){
             $args = array(
                 'name'      => basename( $element->properties->src ),
                 'tmp_name'  => $tmp_name,
-                'page'      => get_current_page(),
+                'page'      => current_page(),
                 'mime'      => $info['mime'],
                 'size'      => filesize($tmp_name),
             );
 
             $exists = false;
-            $args['file'] = upload_file($args['tmp_name'], get_current_page(), $args['name'], $exists );
+            $args['file'] = upload_file($args['tmp_name'], current_page(), $args['name'], $exists );
 
 			load_modules();
             $glue = image_upload( $args );
@@ -126,7 +185,7 @@ $main = function(){
             var_dump($glue);
         },
         'link'  => function( $element ){
-            $id = create_glue_object( $element );
+            $id = create_object( $element );
 
             $text  = str_replace( "\n", '', $element->text );
             $glue  = update_object( array(
@@ -136,7 +195,7 @@ $main = function(){
             ));
         },
         'text'  => function( $element ){
-            $id = create_glue_object( $element );
+            $id = create_object( $element );
 
             $text  = str_replace( "\n", '', $element->text );
             $glue  = update_object( array('name' => "$id", 'content' => $text ) );
@@ -144,9 +203,11 @@ $main = function(){
     );
 
     map( function( $i, $element ) use ( $handlers ) {
-        $handler = $handlers[$element->type];
-        $handler( $element );
-    },$json->elements );
-};
+            if( isset( $handlers[$element->type] ) ){
+                $handlers[$element->type]( $element );
+            }
+        },
+        $json->elements
+    );
 
-$main();
+}) ? $main( $json ) : null;

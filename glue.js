@@ -15,9 +15,11 @@ var glue_me = (function(){
         go: function(){
             var page = {
                 title: $('title').text(),
-                elements: this.collect(),
-                style: $('body').collectCSS().style
+                style: $('body').collectCSS()[0].style,
+                elements: this.collect()
             }
+
+            console.log(page);
 
             $.post(target, {data: JSON.stringify(page)}, function(data){
                 console.log(data);
