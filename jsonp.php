@@ -3,9 +3,42 @@ ini_set('display_errors', "true");
 ini_set('display_warnings', "true");
 ini_set('upload_max_filesize', '16M');
 ini_set('post_max_size', '16M');
+define( 'HOTGLUE_BASE_DIR', dirname(__FILE__) );
 
-include('module_glue.inc.php');
+function process_cors_headers(){
+    header('Access-Control-Allow-Origin: http://www.transmediale.de');
+    header('Access-Control-Allow-Methods: POST, OPTIONS');
+    header('Access-Control-Allow-Headers: X-Requested-With');
+    header('Access-Control-Max-Age: 86400');
 
+    if (strtolower($_SERVER['REQUEST_METHOD']) == 'options') {
+        exit();
+    }
+
+    // If raw post data, this could be from IE8 XDomainRequest
+    // Only use this if you want to populate $_POST in all instances
+    if (isset($HTTP_RAW_POST_DATA)) {
+        $data = explode('&', $HTTP_RAW_POST_DATA);
+        foreach ($data as $val) {
+            if (!empty($val)) {
+                list($key, $value) = explode('=', $val);
+                $_POST[$key] = urldecode($value);
+            }
+        }
+    }
+}
+
+process_cors_headers();
+
+require('module_glue.inc.php');
+
+function map( $function, $array ){
+    return array_map( $function, array_keys($array), array_values($array) );
+}
+
+function zip_keys( $key, $value ){
+    return "$key: $value";
+}
 
 function jsonp_out( $data, $p='callback' ){
     $json = json_encode($data);
@@ -18,7 +51,7 @@ function jsonp_out( $data, $p='callback' ){
 }
 
 function cleanup(){
-    $path = dirname(__FILE__) . '/content/start/head/';
+    $path = HOTGLUE_BASE_DIR . '/content/start/head/';
 
     $files = scandir( $path );
 
@@ -26,49 +59,94 @@ function cleanup(){
         if( in_array( $file, array('page','.','..' ))) continue;
         unlink( $path . $file );
     }
+}
 
+function validate_json(){
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        $json = json_decode($_POST['data']);
 
+        if( ! $json ){
+            exit();
+        }
+        return $json;
+    }
+    else{
+        cleanup();
+        die('Cleanup');
+    }
 }
 
 
-
-//$json   = json_decode( $_GET['d'] );
 $callback   = isset($_GET['callback']) ? $_GET['callback'] : 'callback';
 $action     = isset($_GET['action']) ? $_GET['action'] : null;
 
-//update_object
-/*
-method:"glue.save_state"
-html:"<div class=\"text resizable object glue-text-editing\" style=\"z-index: 100; color: rgb(230, 209, 0); background-color: rgb(0, 0, 0); font-family: Tahoma, Geneva, sans-serif; font-style: normal; font-weight: bold; font-size: 31px; line-height: 0.8548387096774194em; letter-spacing: 0em; position: absolute; word-spacing: 0.8709677419354839em; padding-left: 31px; padding-right: 31px; width: 237px; padding-top: 22px; padding-bottom: 22px; height: 56px; left: 548px; top: 92px; \" id=\"start.head.132424683713\"></div>"
-*/
-switch( $action ){
-    case 'create':
-        $n = create_object( array('page' => 'start.head') );
-        jsonp_out( $n, $callback );
-        break;
 
-    case 'save':
-        $css_array  = (array) json_decode($_GET['css']);
+$main = function(){
+    $json = validate_json();
 
-        foreach( $css_array as $key => $value ){
-            $css_array[$key] = "$key: $value";
+    function get_current_page(){
+        return 'start.head';
+    }
+
+    function create_glue_object( $element ){
+        $glue = create_object( array('page' => 'start.head') );
+        $id   = $glue['#data']['name'];
+        $css  = join( ';', map( 'zip_keys', (array) $element->style ));
+
+        $html = sprintf('<div class="text resizable object \
+                        glue-text-editing" style="%s" id="%s"></div>', $css, $id );
+
+        $glue  = save_state( array( 'html' => $html ) );
+
+        return $id;
+    }
+
+    $handlers = array(
+        'image' => function( $element ){
+            $tmp_name = tempnam('/tmp', 'glue_');
+
+            file_put_contents( $tmp_name, file_get_contents( $element->properties->src ));
+
+            $info = getimagesize( $tmp_name );
+
+            $args = array(
+                'name'      => basename( $element->properties->src ),
+                'tmp_name'  => $tmp_name,
+                'page'      => get_current_page(),
+                'mime'      => $info['mime'],
+                'size'      => filesize($tmp_name),
+            );
+
+            $exists = false;
+            $args['file'] = upload_file($args['tmp_name'], get_current_page(), $args['name'], $exists );
+
+			load_modules();
+            $glue = image_upload( $args );
+
+            var_dump($glue);
+        },
+        'link'  => function( $element ){
+            $id = create_glue_object( $element );
+
+            $text  = str_replace( "\n", '', $element->text );
+            $glue  = update_object( array(
+                'name'        => $id,
+                'content'     => $text,
+                'object-link' => $element->properties->href
+            ));
+        },
+        'text'  => function( $element ){
+            $id = create_glue_object( $element );
+
+            $text  = str_replace( "\n", '', $element->text );
+            $glue  = update_object( array('name' => "$id", 'content' => $text ) );
         }
+    );
 
-        $css = join(';', $css_array );
-        $id   = $_GET['id'];
-        $html = sprintf('<div class="text resizable object glue-text-editing" style="%s" id="start.head.%s"></div>', $css, $id );
-        $out = save_state( array( 'html' => $html ) );
+    map( function( $i, $element ) use ( $handlers ) {
+        $handler = $handlers[$element->type];
+        $handler( $element );
+    },$json->elements );
+};
 
-        if( $_GET['content'] ){
-            $content = str_replace( "\n", '', $_GET['content']);
-            $out = update_object( array('name' => "start.head.$id", 'content' => $content ) );
-        }
-
-
-        jsonp_out( $out, $callback );
-        break;
-
-    default:
-        cleanup();
-        die('Not a valid jsonp request');
-}
+$main();
