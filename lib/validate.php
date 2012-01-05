@@ -1,4 +1,36 @@
 <?php
+function url_whitelist(){
+    return array(
+        'http://www.transmediale.de',
+        'http://sandbox.localhost',
+        'https://github.com/mvhenten',
+        'http://www.facebook.com/transmediale',
+        'http://twitter.com/transmediale',
+        'http://www.flickr.com/photos/transmediale',
+        'http://www.netvibes.com/transmediale',
+        'http://vimeo.com/transmediale'
+    );
+}
+
+function is_url_whitelisted( $url ){
+    static $whitelist;
+
+    if( ! $whitelist ){
+        $whitelist = map( function( $i, $u ){
+                return sprintf('/^%s/', preg_quote($u, '/'));
+            },
+            url_whitelist()
+        );
+    }
+
+    foreach( $whitelist as $re ){
+        if( preg_match( $re, $url ) ){
+            return true;
+        }
+    }
+
+    return false;
+}
 
 function validate_keys( array $keys, $check ){
     map( function( $i, $key ) use ( $check ){
@@ -32,9 +64,11 @@ $json = ( $validate = function(){
         $path  = HOTGLUE_BASE_DIR . '/content/start/head/';
         $files = scandir( $path );
 
-        map( function($i, $file){
-            if( in_array( $file, array('page','.','..' ))) continue;
-            unlink( $path . $file );
-        }, $file );
+        map( function($i, $file) use ($path) {
+            if( !in_array( $file, array('page','.','..' ))){
+                unlink( $path . $file );
+            }
+        }, $files );
+        exit();
     }
 }) ? $validate() : null;

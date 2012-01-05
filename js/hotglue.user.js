@@ -23,7 +23,7 @@ function scriptTag(src, callback) {
     (document.body || head).appendChild(s);
 }
 
-var domain = 'hotglue2.localhost';
+var domain = 'hotglue2.localhost/tm/js';
 
 scriptTag('https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js', function(){
     scriptTag( 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js', function(){

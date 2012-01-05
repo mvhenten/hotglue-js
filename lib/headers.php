@@ -1,4 +1,6 @@
 <?php
+namespace glue;
+
 function headers(){
     header('Access-Control-Allow-Origin: http://www.transmediale.de');
     header('Access-Control-Allow-Methods: POST, OPTIONS');

@@ -1,6 +1,7 @@
 var glue_me = (function(){
     var selectors = 'a:visible,img,p,h1,h2,h3,h4,h5';
-    var target    = 'http://hotglue2.localhost/jsonp.php';
+    var selectors = '#festival-menu-1,#block-block-238 img';
+    var target    = 'http://hotglue2.localhost/tm-glue.php';
 
     $(document.body).append(
         $('<img onclick="glue_me.go()" id="glueme" '
@@ -36,20 +37,21 @@ var glue_me = (function(){
                 obj.style.left = offset.left + 'px';
                 obj.properties = {};
 
-                $(obj.element).find('*').inlineCSS();
-                obj.text = $(obj.element).html();
-
                 switch( obj.element.tagName.toLowerCase() ){
                     case 'img':
                         obj.properties.src  = obj.element.src;
                         obj.type = 'image';
+                        obj.text = '';
                         break;
                     case 'a':
                         obj.properties.href = obj.element.href;
                         obj.type = 'link';
+                        obj.text = $(obj.element).text();
                         break;
                     default:
+                        $(obj.element).find('*').inlineCSS();
                         obj.type = 'text';
+                        obj.text = $(obj.element).html();
                 }
 
                 delete(obj.element);
