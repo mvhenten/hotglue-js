@@ -1,7 +1,15 @@
 var glue_me = (function(){
-    var selectors = 'a:visible,img,p,h1,h2,h3,h4,h5';
-    var selectors = '#festival-menu-1,#block-block-238 img';
+    //var selectors = 'a:visible,img,p,h1,h2,h3,h4,h5,#festival-menu-1';
+    var selectors = 'img,a:visible,p,.festival-col, .view-content, #sidebar-right';
     var target    = 'http://hotglue2.localhost/tm-glue.php';
+
+    // strip html comments, they should not end up in hotglue
+    $('*').contents().each(function() {
+        if(this.nodeType == 8) {
+            $(this).remove()
+        }
+    });
+
 
     $(document.body).append(
         $('<img onclick="glue_me.go()" id="glueme" '
@@ -47,6 +55,14 @@ var glue_me = (function(){
                         obj.properties.href = obj.element.href;
                         obj.type = 'link';
                         obj.text = $(obj.element).text();
+                        break;
+                    case 'div':
+                        $(obj.element).find('*').inlineCSS();
+                        var clone = $(obj.element).clone();
+
+                        $(clone).find('a,img,p').remove();
+                        obj.text = $(clone).html();
+                        obj.type = 'text';
                         break;
                     default:
                         $(obj.element).find('*').inlineCSS();
