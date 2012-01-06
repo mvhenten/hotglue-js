@@ -8,6 +8,23 @@ function current_page(){
     return 'start.head';
 }
 
+function create_page( $json ){
+    require_once( HOTGLUE_BASE_DIR . '/module_page.inc.php');
+    $style = (array) $json->style;
+    $args  = array('name' => current_page(), 'preferred_module' => 'page' );
+
+    if( isset($style['background-image']) && !empty($style['background-image']) ){
+        preg_match( '/url\((.+?)\)/', $style['background-image'], $match );
+        $img_src = $match[1];
+
+        $file_args = upload_image( $img_src );
+
+        $args = array_merge( $args, $file_args );
+
+        \page_upload( $args );
+    }
+}
+
 function create_object( $element ){
     $glue = \create_object( array('page' => current_page() ) );
 
@@ -112,6 +129,8 @@ function create_image( $element ){
             return $glue;
         }
     );
+
+    create_page( $json );
 
     $out = map( function( $i, $element ) use ( $handlers ) {
             if( isset( $handlers[$element->type] ) ){
